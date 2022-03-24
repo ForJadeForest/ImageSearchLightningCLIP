@@ -46,8 +46,7 @@ def load_callbacks():
         save_last=True
     ), ]
     if args.lr_scheduler:
-        callbacks.append(plc.LearningRateMonitor(
-            logging_interval='epoch'))
+        callbacks.append(plc.LearningRateMonitor(logging_interval='epoch'))
     return callbacks
 
 
@@ -64,23 +63,28 @@ def main(args):
 
     # # If you want to change the logger's saving folder
     # logger = TensorBoardLogger(save_dir=args.logdir_path, name=args.log_dir)
-    args.callbacks = load_callbacks()
     # args.logger = logger
     # trainer = Trainer.from_argparse_args(
-    #     args, gpus=1,precision=16, auto_lr_find=True)
-    # os.environ["CUDA_VISIBLE_DEVICES"] = "1，2"
-    trainer = Trainer.from_argparse_args(
-        args, gpus=2, strategy='ddp', precision=16,
-        enable_progress_bar=True)
-    # trainer.tune(model, data_module)
-    print('the new lr is :', model.hparams.lr)
-    # trainer = Trainer.from_argparse_args(args, gpus=2, strategy='ddp', fast_dev_run=True)
+    #     args, gpus=1,precision=16, auto_lr_find=True, fast_dev_run=True)
 
+    # trainer.tune(model, data_module)
+    # print('the new lr is :', model.hparams.lr)
+
+    args.callbacks = load_callbacks()
+    trainer = Trainer.from_argparse_args(args)
     trainer.fit(model, data_module, )
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
+
+    # Trainer Control
+    parser.add_argument('--gpus', default=2, type=int)
+    parser.add_argument('--strategy', default='ddp', type=str)
+    parser.add_argument('--precision', default=16, type=int)
+    parser.add_argument('--enable_progress_bar', default=False, type=bool)
+    parser.add_argument('--fast_dev_run', default=True, type=bool)
+
     # Basic Training Control
     parser.add_argument('--batch_size', default=512, type=int)
     parser.add_argument('--num_workers', default=16, type=int)
