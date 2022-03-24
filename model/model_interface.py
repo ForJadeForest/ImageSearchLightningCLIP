@@ -15,13 +15,15 @@
 import importlib
 import inspect
 
+import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.optim.lr_scheduler as lrs
 from torch import nn
 from torch.nn import functional as F
+from torchmetrics.functional import accuracy
 
-from .common import add_similarity
+from .utils import add_similarity, imageQuery
 
 
 class MInterface(pl.LightningModule):
@@ -48,7 +50,6 @@ class MInterface(pl.LightningModule):
             elif loss_name == 'l1':
                 loss_res = loss(stu_encode, tea_encode)
             else:
-                # TODO: CE_loss Calculate logic
                 loss_res = loss(stu_encode, tea_encode)
             loss_res *= scale
             self.log('loss/' + loss_name, loss_res.item(), on_step=True, on_epoch=True, prog_bar=False)
@@ -62,8 +63,15 @@ class MInterface(pl.LightningModule):
             total_loss = sum([loss * weight for loss, weight in zip(losses, self.hparams.weight)])
         else:
             total_loss = sum(losses) / len(losses)
-        self.log('lr', self.lr_schedulers())
         return total_loss
+
+    def validation_epoch_end(self, outputs) -> None:
+        add_similarity(self.model, self.logger.experiment, self.current_epoch, device=self.device)
+        query = ['a man is riding bike', 'It\'s about seven o\'clock now', 'I want to find my computer',
+                 'I want to see some cute cats!']
+        random_query = np.random.randint(0, 4)
+        imageQuery(query[random_query], self.model, self.encode_path, self.test_path, self.device, self.logger,
+                   self.current_epoch)
 
     def validation_step(self, batch, batch_idx):
         img_tensor, captions, sentence = batch
@@ -79,8 +87,11 @@ class MInterface(pl.LightningModule):
             elif loss_name == 'l1':
                 loss_res = loss(stu_encode, tea_encode)
             else:
-                # TODO: CE_loss Calculate logic
-                loss_res = loss(stu_encode, tea_encode)
+                stu_encode = stu_encode / stu_encode.norm(dim=1, keepdim=True)
+                text_encode = text_encode / text_encode.norm(dim=1, keepdim=True)
+                logits = (100 * stu_encode @ text_encode.T).softmax(dim=-1)
+                label = torch.arange(len(logits), device=self.device)
+                loss_res = loss(logits, label)
             loss_res *= scale
             self.log('val_loss/' + loss_name, loss_res.item(), on_step=True, on_epoch=True, prog_bar=False)
             losses.append(loss_res)
@@ -95,24 +106,19 @@ class MInterface(pl.LightningModule):
             total_loss = sum(losses) / len(losses)
 
         stu_encode = stu_encode / stu_encode.norm(dim=1, keepdim=True)
-        tea_encode = tea_encode / tea_encode.norm(dim=1, keepdim=True)
         text_encode = text_encode / text_encode.norm(dim=1, keepdim=True)
 
         stu_logits_per_image = (stu_encode @ text_encode.t())
-        tea_logits_per_image = (tea_encode @ text_encode.t())
-
         label = torch.arange(stu_logits_per_image.shape[0], device=self.device)
 
-        correct_num = sum(label == stu_logits_per_image.argmax(dim=1)).cpu().item()
-
-        self.log('val_total_loss', total_loss.item(), on_step=False, on_epoch=True, prog_bar=False)
-        self.log('val_acc', correct_num / len(tea_logits_per_image),
-                 on_step=False, on_epoch=True, prog_bar=False)
-
-        add_similarity(self.model, self.logger.experiment, self.current_epoch, device=self.device)
-        return correct_num, len(tea_logits_per_image)
+        for k in [1, 5, 10, 20, 30, 50]:
+            acc = accuracy(stu_logits_per_image, label, top_k=k)
+            self.log('val_acc/top{}'.format(k), acc, on_epoch=True, on_step=False, prog_bar=False)
+        self.log('val_loss/' + 'total_loss', total_loss.item(), on_step=False, on_epoch=True, prog_bar=False)
+        return
 
     def test_step(self, batch, batch_idx):
+
         # Here we just reuse the validation_step for testing
         return self.validation_step(batch, batch_idx)
 
@@ -155,7 +161,7 @@ class MInterface(pl.LightningModule):
         if loss_name == 'l1':
             loss_function = nn.L1Loss()
         elif loss_name == 'ce':
-            loss_function = nn.CrossEntropyLoss()
+            loss_function = nn.CrossEntropyLoss(reduction='mean')
         elif loss_name == 'kl':
             loss_function = nn.KLDivLoss(reduction='batchmean')
         else:
