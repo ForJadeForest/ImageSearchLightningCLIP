@@ -303,9 +303,11 @@ def add_similarity(model, tb_write, epoch, **kwargs):
 
     similarity = (text_features @ image_features.T).softmax(dim=-1).cpu().numpy()
     tea_similarity = (text_features @ tea_image_features.T).softmax(dim=-1).cpu().numpy()
+    similarity100 = (100 * text_features @ image_features.T).softmax(dim=-1).cpu().numpy()
+    tb_write.add_figure('Similarity/student', generate_figure(similarity, texts, original_images), epoch)
+    tb_write.add_figure('Similarity/teacher', generate_figure(tea_similarity, texts, original_images), epoch)
+    tb_write.add_figure('Similarity/100 * student', generate_figure(similarity100, texts, original_images), epoch)
 
-    tb_write.add_figure('Similarity student', generate_figure(similarity, texts, original_images), epoch)
-    tb_write.add_figure('Similarity teacher', generate_figure(tea_similarity, texts, original_images), epoch)
     plt.clf()
 
     plt.close("all")
