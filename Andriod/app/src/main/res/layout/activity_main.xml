@@ -1,37 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity">
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:app="http://schemas.android.com/apk/res-auto"
+xmlns:tools="http://schemas.android.com/tools"
+android:layout_width="match_parent"
+android:layout_height="match_parent"
+android:background="@drawable/bg_main"
+tools:context=".MainActivity">
 
-    <ImageView
-        android:id="@+id/image"
-        android:layout_width="match_parent"
-        android:layout_height="707dp"
-        android:scaleType="fitCenter" />
+<Button
+    android:id="@+id/Imagebutton"
+    android:layout_width="409dp"
+    android:layout_height="378dp"
+    android:layout_marginTop="352dp"
+    android:layout_marginBottom="4dp"
+    android:background="@android:color/transparent"
+    android:text="Image-To-Image"
+    android:textSize="34sp"
+    android:textColor="#ffffff"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/text"
-        android:layout_width="match_parent"
-        android:layout_height="150dp"
-        android:layout_gravity="top|center_vertical"
-        android:background="#80000000"
-        android:textColor="@android:color/white"
-        android:textSize="18sp" />
+<Button
+    android:id="@+id/Textbutton"
+    android:layout_width="412dp"
+    android:layout_height="370dp"
+    android:background="@android:color/transparent"
+    android:text="Text-To-Image"
+    android:textColor="#ffffff"
+    android:textSize="34sp"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent" />
 
-    <ImageView
-        android:id="@+id/imageView"
-        android:layout_width="match_parent"
-        android:layout_height="493dp" />
-
-
-    <Button
-        android:id="@+id/button"
-        android:layout_width="180dp"
-        android:layout_height="72dp"
-        android:text="Find Similar Images"
-        android:visibility="visible" />
-
-</FrameLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
