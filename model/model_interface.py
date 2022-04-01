@@ -15,7 +15,6 @@
 import importlib
 import inspect
 
-import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.optim.lr_scheduler as lrs
@@ -23,7 +22,7 @@ from torch import nn
 from torch.nn import functional as F
 from torchmetrics.functional import accuracy
 
-from .utils import add_similarity, imageQuery
+from .utils import add_similarity
 
 
 class MInterface(pl.LightningModule):
@@ -37,8 +36,14 @@ class MInterface(pl.LightningModule):
     def forward(self, img):
         return self.model(img)
 
+    def on_train_epoch_start(self):
+        self.print('current epoch: {}'.format(self.current_epoch))
+        if self.current_epoch > 100:
+            self.hparams.t = 2
+
     def training_step(self, batch, batch_idx):
         stu_encode, tea_encode = self(batch)
+
         losses = []
         for (loss_name, loss), scale in zip(self.loss_function.items(), self.hparams.loss_scale):
             if loss_name == 'kl':
@@ -66,16 +71,15 @@ class MInterface(pl.LightningModule):
         return total_loss
 
     def validation_epoch_end(self, outputs) -> None:
-        add_similarity(self.model, self.logger.experiment, self.current_epoch, device=self.device)
-        query = ['a man is riding bike', 'It\'s about seven o\'clock now', 'I want to find my computer',
-                 'I want to see some cute cats!']
-        random_query = np.random.randint(0, 4)
-        imageQuery(query[random_query], self.model, self.encode_path, self.test_path, self.device, self.logger,
-                   self.current_epoch)
+        add_similarity(self.model, self.logger.experiment, self.current_epoch, device=self.device,
+                       model_name=self.hparams.model_name)
 
     def validation_step(self, batch, batch_idx):
         img_tensor, captions, sentence = batch
-        stu_encode, tea_encode = self(img_tensor)
+        if self.hparams.model_name == 'model_text_distilled':
+            stu_encode, tea_encode = self(captions)
+        else:
+            stu_encode, tea_encode = self(img_tensor)
         text_encode = self.model.teacher.encode_text(captions).float()
         losses = []
         for (loss_name, loss), scale in zip(self.loss_function.items(), self.hparams.loss_scale):
@@ -111,9 +115,13 @@ class MInterface(pl.LightningModule):
         stu_logits_per_image = (stu_encode @ text_encode.t())
         label = torch.arange(stu_logits_per_image.shape[0], device=self.device)
 
-        for k in [1, 5, 10, 20, 30, 50]:
-            acc = accuracy(stu_logits_per_image, label, top_k=k)
-            self.log('val_acc/top{}'.format(k), acc, on_epoch=True, on_step=False, prog_bar=False)
+        for k in ['', 1, 2, 3, 4, 5, 10, 20, 30, 50]:
+            if k == '':
+                acc = accuracy(stu_logits_per_image, label, top_k=1)
+                self.log('val_acc', acc, on_epoch=True, on_step=False, prog_bar=False)
+            else:
+                acc = accuracy(stu_logits_per_image, label, top_k=k)
+                self.log('val_acc/top{}'.format(k), acc, on_epoch=True, on_step=False, prog_bar=False)
         self.log('val_loss/' + 'total_loss', total_loss.item(), on_step=False, on_epoch=True, prog_bar=False)
         return
 
