@@ -16,7 +16,6 @@ import importlib
 import inspect
 
 import pytorch_lightning as pl
-from clip import tokenize
 from torch.utils.data import DataLoader
 
 
@@ -36,11 +35,11 @@ class DInterface(pl.LightningDataModule):
         # Assign train/val datasets for use in dataloaders
         if stage == 'fit' or stage is None:
             self.trainset = self.instancialize(train=True)
-            self.valset = self.instancialize(train=False, tokenizer=tokenize)
+            self.valset = self.instancialize(train=False)
 
         # Assign test dataset for use in dataloader(s)
         if stage == 'test' or stage is None:
-            self.testset = self.instancialize(train=False, tokenizer=tokenize)
+            self.testset = self.instancialize(train=False)
 
         # # If you need to balance your data using Pytorch Sampler,
         # # please uncomment the following lines.
