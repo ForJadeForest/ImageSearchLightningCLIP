@@ -1,5 +1,3 @@
-import numpy as np
-import torch
 from torch import nn
 
 from .common import VisionTransformer
@@ -15,8 +13,6 @@ class VitStudent(nn.Module):
                                                layers=layers,
                                                heads=heads,
                                                output_dim=output_dim)
-
-        self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.01))
 
     def encode_image(self, image):
         return self.student_model(image)
