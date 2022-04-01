@@ -39,32 +39,46 @@ def main(args):
         logger = TensorBoardLogger(save_dir='./', name='lightning_logs', version=args.version)
         args.logger = logger
     args.callbacks = load_callbacks()
-    # logger = TensorBoardLogger(save_dir=args.logdir_path, name=args.log_dir)
-    # args.logger = logger
-    # Trainer(auto_scale_batch_size=, auto_lr_find=)
+    """
+    trainer:
+    auto_scale_batch_size
+    auto_lr_find
+    precision
+    limit_val_batches
+    fast_dev_run
+    limit_train_batches
+    strategy
+    enable_progress_bar
+    """
     # os.environ["CUDA_VISIBLE_DEVICES"] = '0,1'
     trainer = Trainer.from_argparse_args(args, gpus=1, precision=16)
+    if args.tune == 'true':
+        trainer.tune(model, data_module)
+        print('the new lr is :', model.hparams.lr)
+    else:
+        trainer.fit(model, data_module)
 
-    # trainer.tune(model, data_module)
-    # print('the new lr is :', model.hparams.lr)
 
-    # Trainer(limit_val_batches=2, fast_dev_run=True, limit_train_batches=)
-    # trainer = Trainer.from_argparse_args(args, gpus=2, precision=16, strategy='ddp'
-    #                                      , enable_progress_bar=False, )
-    trainer.fit(model, data_module, )
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
 
+    # Trainer Control
+    parser.add_argument('--gpu', default=2, type=int)
+    parser.add_argument('--epoch_num', default=500, type=int)
+    parser.add_argument('--precision', default=16, type=int)
+    parser.add_argument('--strategy', default='ddp', type=str)
+
     # Basic Training Control
     parser.add_argument('--batch_size', default=512, type=int)
+    parser.add_argument('--max_epochs', default=500, type=int)
     parser.add_argument('--num_workers', default=16, type=int)
     parser.add_argument('--seed', default=2022, type=int)
     parser.add_argument('--lr', default=0.0001445439770745928 * 2, type=float)
 
     # LR Scheduler
-    parser.add_argument('--lr_scheduler', choices=['step', 'cosine'], type=str)
+    parser.add_argument('--lr_scheduler', choices=['step', 'cosine'], type=str, default='step')
     parser.add_argument('--lr_decay_steps', default=100, type=int)
     parser.add_argument('--lr_decay_rate', default=0.5, type=float)
     parser.add_argument('--lr_decay_min_lr', default=1e-5, type=float)
@@ -75,13 +89,11 @@ if __name__ == '__main__':
     parser.add_argument('--load_ver', default=None, type=str)
     parser.add_argument('--load_v_num', default=None, type=int)
 
-    # Training Infoe
+    # Training Info
     parser.add_argument('--dataset', default='image_dataset', type=str)
     parser.add_argument('--data_dir', default='/home/pyz/data/COCO', type=str)
     parser.add_argument('--model_name', default='model_image_distilled', type=str)
     parser.add_argument('--teacher_name', default='ViT-B/32', type=str)
-    parser.add_argument('--loss', default=['kl', 'l1'], nargs='+', type=list)
-    parser.add_argument('--weight_decay', default=1e-5, type=float)
     parser.add_argument('--no_augment', action='store_true')
     parser.add_argument('--log_dir', default='runs', type=str)
     parser.add_argument('--cache_dir', default='cache', type=str)
@@ -113,6 +125,8 @@ if __name__ == '__main__':
     parser.add_argument('--t', default=4, type=int)
     parser.add_argument('--weight', default=[0.5, 0.5], nargs='+', type=list)
     parser.add_argument('--loss_scale', default=[10, 1], nargs='+', type=list)
+    parser.add_argument('--loss', default=['kl', 'l1'], nargs='+', type=list)
+    parser.add_argument('--weight_decay', default=1e-5, type=float)
 
     # Add pytorch lightning's args to parser as a group.
     # parser = Trainer.add_argparse_args(parser)
