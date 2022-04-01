@@ -1,30 +1,9 @@
-# Copyright 2021 Zhongyang Zhang
-# Contact: mirakuruyoo@gmai.com
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-# 
-#     http://www.apache.org/licenses/LICENSE-2.0
-# 
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-""" This main entrance of the whole project.
-
-    Most of the code should not be changed, please directly
-    add all the input arguments of your model's constructor
-    and the dataset file's constructor. The MInterface and 
-    DInterface can be seen as transparent to all your args.    
-"""
 from argparse import ArgumentParser
 
 import pytorch_lightning as pl
 import pytorch_lightning.callbacks as plc
 from pytorch_lightning import Trainer
+from pytorch_lightning.loggers import TensorBoardLogger
 
 from data import DInterface
 from model import MInterface
@@ -32,20 +11,17 @@ from utils import load_model_path_by_args
 
 
 def load_callbacks():
-    callbacks = [plc.EarlyStopping(
-        monitor='val_acc',
-        mode='max',
-        patience=10,
-        min_delta=0.0001
-    ), plc.ModelCheckpoint(
-        dirpath='checkpoint/vit_24/val_acc',
-        monitor='val_acc',
-        filename='best-{epoch:02d}-{val_acc:.3f}',
-        save_top_k=5,
-        mode='max',
-        save_last=True
-    ), ]
+    callbacks = [
+        plc.ModelCheckpoint(
+            monitor='val_acc',
+            filename='best-{epoch:02d}-{val_acc:.3f}',
+            save_top_k=2,
+            auto_insert_metric_name=True,
+            mode='max',
+            save_last=True
+        ), ]
     if args.lr_scheduler:
+        print("Load the LearningRateMonitor")
         callbacks.append(plc.LearningRateMonitor(logging_interval='epoch'))
     return callbacks
 
@@ -60,40 +36,36 @@ def main(args):
     else:
         model = MInterface(**vars(args))
         args.resume_from_checkpoint = load_path
-
-    # # If you want to change the logger's saving folder
+        logger = TensorBoardLogger(save_dir='./', name='lightning_logs', version=args.version)
+        args.logger = logger
+    args.callbacks = load_callbacks()
     # logger = TensorBoardLogger(save_dir=args.logdir_path, name=args.log_dir)
     # args.logger = logger
-    # trainer = Trainer.from_argparse_args(
-    #     args, gpus=1,precision=16, auto_lr_find=True, fast_dev_run=True)
+    # Trainer(auto_scale_batch_size=, auto_lr_find=)
+    # os.environ["CUDA_VISIBLE_DEVICES"] = '0,1'
+    trainer = Trainer.from_argparse_args(args, gpus=1, precision=16)
 
     # trainer.tune(model, data_module)
     # print('the new lr is :', model.hparams.lr)
 
-    args.callbacks = load_callbacks()
-    trainer = Trainer.from_argparse_args(args)
+    # Trainer(limit_val_batches=2, fast_dev_run=True, limit_train_batches=)
+    # trainer = Trainer.from_argparse_args(args, gpus=2, precision=16, strategy='ddp'
+    #                                      , enable_progress_bar=False, )
     trainer.fit(model, data_module, )
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
 
-    # Trainer Control
-    parser.add_argument('--gpus', default=2, type=int)
-    parser.add_argument('--strategy', default='ddp', type=str)
-    parser.add_argument('--precision', default=16, type=int)
-    parser.add_argument('--enable_progress_bar', default=False, type=bool)
-    parser.add_argument('--fast_dev_run', default=True, type=bool)
-
     # Basic Training Control
     parser.add_argument('--batch_size', default=512, type=int)
     parser.add_argument('--num_workers', default=16, type=int)
-    parser.add_argument('--seed', default=1234, type=int)
+    parser.add_argument('--seed', default=2022, type=int)
     parser.add_argument('--lr', default=0.0001445439770745928 * 2, type=float)
 
     # LR Scheduler
     parser.add_argument('--lr_scheduler', choices=['step', 'cosine'], type=str)
-    parser.add_argument('--lr_decay_steps', default=50, type=int)
+    parser.add_argument('--lr_decay_steps', default=100, type=int)
     parser.add_argument('--lr_decay_rate', default=0.5, type=float)
     parser.add_argument('--lr_decay_min_lr', default=1e-5, type=float)
 
@@ -104,36 +76,46 @@ if __name__ == '__main__':
     parser.add_argument('--load_v_num', default=None, type=int)
 
     # Training Infoe
-
     parser.add_argument('--dataset', default='image_dataset', type=str)
     parser.add_argument('--data_dir', default='/home/pyz/data/COCO', type=str)
     parser.add_argument('--model_name', default='model_image_distilled', type=str)
+    parser.add_argument('--teacher_name', default='ViT-B/32', type=str)
     parser.add_argument('--loss', default=['kl', 'l1'], nargs='+', type=list)
     parser.add_argument('--weight_decay', default=1e-5, type=float)
     parser.add_argument('--no_augment', action='store_true')
-    parser.add_argument('-- ', default='lightning_logs', type=str)
+    parser.add_argument('--log_dir', default='runs', type=str)
+    parser.add_argument('--cache_dir', default='cache', type=str)
 
-    # Model Hyperparameters
+    # Vit Model Hyperparameters
     parser.add_argument('--input_resolution', default=224, type=int)
     parser.add_argument('--patch_size', default=32, type=int)
     parser.add_argument('--width', default=384, type=int)
-    parser.add_argument('--t', default=4, type=int)
-    parser.add_argument('--weight', default=[0.5, 0.5], nargs='+', type=list)
-    parser.add_argument('--loss_scale', default=[10, 1], nargs='+', type=list)
     parser.add_argument('--layers', default=6, type=int)
     parser.add_argument('--heads', default=24, type=int)
+
+    # Transformer Model Hyperparameters
+    """
+     context_length, vocab_size, transformer_width, transformer_layers, transformer_heads, output_dim
+    """
+    parser.add_argument('--context_length', default=77, type=int)
+    parser.add_argument('--vocab_size', default=49408, type=int)
+    parser.add_argument('--transformer_width', default=128, type=int)
+    parser.add_argument('--transformer_layers', default=6, type=int)
+    parser.add_argument('--transformer_heads', default=8, type=int)
+
+    # share Hyperparameters
     parser.add_argument('--output_dim', default=512, type=int)
-    parser.add_argument('--teacher_name', default='ViT-B/32', type=str)
 
     # Other
     parser.add_argument('--aug_prob', default=0.5, type=float)
 
-    # Add pytorch lightning's args to parser as a group.
-    parser = Trainer.add_argparse_args(parser)
+    # Distilled Hyperparameters
+    parser.add_argument('--t', default=4, type=int)
+    parser.add_argument('--weight', default=[0.5, 0.5], nargs='+', type=list)
+    parser.add_argument('--loss_scale', default=[10, 1], nargs='+', type=list)
 
-    ## Deprecated, old version
-    # parser = Trainer.add_argparse_args(
-    #     parser.add_argument_group(title="pl.Trainer args"))
+    # Add pytorch lightning's args to parser as a group.
+    # parser = Trainer.add_argparse_args(parser)
 
     # Reset Some Default Trainer Arguments' Default Values
     parser.set_defaults(max_epochs=500)
