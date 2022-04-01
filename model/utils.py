@@ -63,16 +63,25 @@ def add_similarity(model, tb_write, epoch, **kwargs):
     image_input = torch.tensor(np.stack(images), device=kwargs['device'])
     text_tokens = tokenize([desc for desc in texts]).to(kwargs['device'])
 
-    image_features, tea_image_features = model(image_input)
-    text_features = model.teacher.encode_text(text_tokens).float()
+    if kwargs['model_name'] == 'model_text_distilled':
+        text_features, tea_text_features = model(text_tokens)
+        image_features = model.teacher.encode_image(image_input).float()
+        image_features = image_features / image_features.norm(dim=-1, keepdim=True)
+        tea_text_features = tea_text_features / tea_text_features.norm(dim=-1, keepdim=True)
+        text_features = text_features / text_features.norm(dim=-1, keepdim=True)
 
-    image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-    tea_image_features = tea_image_features / tea_image_features.norm(dim=-1, keepdim=True)
-    text_features = text_features / text_features.norm(dim=-1, keepdim=True)
-
-    similarity = (text_features @ image_features.T).softmax(dim=-1).cpu().numpy()
-    tea_similarity = (text_features @ tea_image_features.T).softmax(dim=-1).cpu().numpy()
-    similarity100 = (100 * text_features @ image_features.T).softmax(dim=-1).cpu().numpy()
+        similarity = (image_features @ text_features.T).softmax(dim=-1).cpu().numpy()
+        tea_similarity = (image_features @ tea_text_features.T).softmax(dim=-1).cpu().numpy()
+        similarity100 = (100 * image_features @ text_features.T).softmax(dim=-1).cpu().numpy()
+    else:
+        image_features, tea_image_features = model(image_input)
+        text_features = model.teacher.encode_text(text_tokens).float()
+        image_features = image_features / image_features.norm(dim=-1, keepdim=True)
+        tea_image_features = tea_image_features / tea_image_features.norm(dim=-1, keepdim=True)
+        text_features = text_features / text_features.norm(dim=-1, keepdim=True)
+        similarity = (text_features @ image_features.T).softmax(dim=-1).cpu().numpy()
+        tea_similarity = (text_features @ tea_image_features.T).softmax(dim=-1).cpu().numpy()
+        similarity100 = (100 * text_features @ image_features.T).softmax(dim=-1).cpu().numpy()
     tb_write.add_figure('Similarity/student', generate_figure(similarity, texts, original_images), epoch)
     tb_write.add_figure('Similarity/teacher', generate_figure(tea_similarity, texts, original_images), epoch)
     tb_write.add_figure('Similarity/100 * student', generate_figure(similarity100, texts, original_images), epoch)
@@ -83,11 +92,11 @@ def add_similarity(model, tb_write, epoch, **kwargs):
 
 
 def imageQuery(query, model, encodes_path, file_path, device, tb_write, epoch):
-    student = model.model.student
-    teacher = model.model.teacher
+    student = model.student
+    teacher = model.teacher
 
     image_set = TestImageDataset(file_path, preprocess=teacher.preprocess)
-    for file_names, images in DataLoader(image_set, batch_size=256, shuffle=False):
+    for file_names, images in DataLoader(image_set, batch_size=256, shuffle=False, num_workers=16):
         out = student(images.to(device))
         for file_name, feature in zip(file_names, out):
             save = feature / feature.norm(dim=0, keepdim=True)
@@ -106,11 +115,11 @@ def imageQuery(query, model, encodes_path, file_path, device, tb_write, epoch):
     top_probs, top_labels = text_probs.cpu().topk(20, dim=-1)
 
     figure = plt.figure(figsize=(10, 8), dpi=200)
-    data_dir = './test2017'
+
     top_labels = top_labels.squeeze(dim=0)
     for i, index in enumerate(top_labels):
         filename = name[index]
-        path = os.path.join(data_dir, filename + '.jpg')
+        path = os.path.join(file_path, filename + '.jpg')
         image = Image.open(path).convert("RGB")
         plt.subplot(5, 4, i + 1)
         plt.imshow(image)
