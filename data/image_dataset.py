@@ -3,19 +3,20 @@ import os
 import os.path as op
 
 from PIL import Image
+from clip import tokenize
 from torch.utils.data import Dataset
 from torchvision import transforms
 
 
 class ImageDataset(Dataset):
     def __init__(self, data_dir=r'data/ref', train=True, no_augment=True, aug_prob=0.5, img_mean=(0.485, 0.456, 0.406),
-                 img_std=(0.229, 0.224, 0.225), tokenizer=None):
+                 img_std=(0.229, 0.224, 0.225)):
         super(ImageDataset, self).__init__()
         self.__dict__.update(locals())
         self.aug = train and not no_augment
         self.path_list = None
         if not train:
-            self.tokenizer = tokenizer
+            self.tokenizer = tokenize
         self.check_files()
 
     def check_files(self):
