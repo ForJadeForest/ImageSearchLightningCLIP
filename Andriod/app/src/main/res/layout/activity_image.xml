@@ -4,6 +4,48 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/bg_vision"
     tools:context=".ImageActivity">
 
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cv_img_activity"
+        android:layout_width="342dp"
+        android:layout_height="408dp"
+        android:layout_gravity="center"
+        android:layout_marginStart="34dp"
+        android:layout_marginTop="178dp"
+        android:layout_marginEnd="34dp"
+        android:foreground="?attr/selectableItemBackground"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="10dp"
+        app:cardPreventCornerOverlap="true"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="MissingConstraints">
+
+        <ImageView
+            android:id="@+id/pic"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            tools:layout_editor_absoluteX="84dp"
+            tools:layout_editor_absoluteY="236dp" />
+
+    </androidx.cardview.widget.CardView>
+
+
+    <Button
+        android:id="@+id/find_similar"
+        android:layout_width="288dp"
+        android:layout_height="59dp"
+        android:layout_marginTop="604dp"
+        android:text="Find Similar Pics"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.495"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>
+

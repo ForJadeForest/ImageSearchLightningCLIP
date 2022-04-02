@@ -11,6 +11,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.media.Image;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -45,7 +46,8 @@ public class MainActivity extends AppCompatActivity {
 
   public static float[] TORCHVISION_NORM_MEAN_RGB = new float[] {0.481f, 0.458f, 0.408f};
   public static float[] TORCHVISION_NORM_STD_RGB = new float[] {0.269f, 0.261f, 0.276f};
-
+  public static int INPUT_TENSOR_WIDTH = 224;
+  public static int INPUT_TENSOR_HEIGHT = 224;
 
   public MainActivity() throws IOException {
   }
@@ -60,26 +62,12 @@ public class MainActivity extends AppCompatActivity {
     //去掉最上面时间、电量等
     this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
+    findViewById(R.id.Textbutton).setOnClickListener(v -> startActivity(new Intent(MainActivity.this, TextActivity.class)));
+    findViewById(R.id.Imagebutton).setOnClickListener(v -> startActivity(new Intent(MainActivity.this, ImageActivity.class)));
 
-    Button button_text = (Button) findViewById(R.id.Textbutton);
-    button_text.setOnClickListener(new View.OnClickListener() {
-      public void onClick(View v) {
-        Intent intent = new Intent();
-        intent.setClass(MainActivity.this, TextActivity.class);
-        startActivity(intent);
-        // Do something in response to button click
-      }
-    });
 
-    Button button_image = (Button) findViewById(R.id.Imagebutton);
-    button_image.setOnClickListener(new View.OnClickListener() {
-      public void onClick(View v) {
-        Intent intent = new Intent();
-        intent.setClass(MainActivity.this, ImageActivity.class);
-        startActivity(intent);
-        // Do something in response to button click
-      }
-    });
+
+
 
     if(Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED) )
     {
@@ -107,14 +95,19 @@ public class MainActivity extends AppCompatActivity {
     }
     //imageView.setImageURI(Uri.fromFile(OriginImageSet.get(0)));
     List<Bitmap> ImageSet = new ArrayList<Bitmap>();
-    for(int i=0;i<OriginImageSet.size()-650;i++)
+    for(int i=0;i<OriginImageSet.size();i++)
     {
-      Bitmap bitmap=BitmapFactory.decodeFile(OriginImageSet.get(i).getPath(),getBitmapOption(2));
-      ImageSet.add(bitmap);
+      try {
+        Bitmap bitmap = BitmapFactory.decodeFile(OriginImageSet.get(i).getPath(), getBitmapOption(4));
+        ImageSet.add(bitmap);
+      }
+      catch (OutOfMemoryError e)
+      { }
     }
 
     final ShareData sharedata = (ShareData)getApplication();
-    sharedata.setImageSet(ImageSet);
+    List<Bitmap> ShareImageSet=new ArrayList<>(ImageSet);
+    sharedata.setImageSet(ShareImageSet);
 
     //定义bitmap和module两个变量
 
@@ -134,8 +127,7 @@ public class MainActivity extends AppCompatActivity {
 
     // preparing input tensor
     /* 3.2-将bitmap图片转换成tensor并进行预处理（需与原模型输入保持一直，可以保证准确率） */
-    final int INPUT_TENSOR_WIDTH = 224;
-    final int INPUT_TENSOR_HEIGHT = 224;
+
 
     Tensor t_tensor = null;
     float[][] ImageFeatureSet = new float[ImageSet.size()][];
@@ -193,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
     float sum=0;
     for(int i=0;i<Similarity.length;i++)
     {
-      Similarity[i]= (float) Math.exp(100*Similarity[i]);
+      Similarity[i]= (float) Math.exp(10*Similarity[i]);
       sum+=Similarity[i];
     }
     for(int i=0;i<Similarity.length;i++)

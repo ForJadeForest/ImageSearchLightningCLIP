@@ -45,7 +45,8 @@ public class TextActivity extends AppCompatActivity {
                         float[] Textfeature =sharedata.getModule_text().forward(IValue.from(textTensor)).toTensor().getDataAsFloatArray();
                         float[] TextSimilarity=ConSimilarity(sharedata.getImageSetFeature(),Textfeature);
                         int[] Index=Arraysort(TextSimilarity);
-                        
+
+                        sharedata.setSimilarity(TextSimilarity);
                         Intent intent = new Intent();
                         intent.putExtra("text", text);
                         intent.putExtra("Index", Index);

@@ -14,9 +14,11 @@ import java.util.List;
 public class ShareData extends Application {
 
     private List<Bitmap> ImageSet;
+
     private float[][] ImageSetFeature;
     private Module module_image;
     private Module module_text;
+    private float[] Similarity;
 
     public List<Bitmap> getImageSet()
     {
@@ -51,6 +53,14 @@ public class ShareData extends Application {
         this.module_text= module_text;
     }
 
+    public float[] getSimilarity()
+    {
+        return this.Similarity;
+    }
+    public void setSimilarity(float[] Similarity)
+    {
+        this.Similarity= Similarity;
+    }
 
     @Override
     public void onCreate()
