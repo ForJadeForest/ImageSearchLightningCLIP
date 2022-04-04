@@ -11,6 +11,7 @@ import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.pytorch.IValue;
 import org.pytorch.Tensor;
@@ -41,17 +42,25 @@ public class TextActivity extends AppCompatActivity {
                         //搜索（发送消息）操作（此处省略，根据读者自己需要，直接调用自己想实现的方法即可）
                         String text=editText.getText().toString();
 
-                        Tensor textTensor=tokenize(text,77,Simple_tokenize);
-                        float[] Textfeature =sharedata.getModule_text().forward(IValue.from(textTensor)).toTensor().getDataAsFloatArray();
-                        float[] TextSimilarity=ConSimilarity(sharedata.getImageSetFeature(),Textfeature);
-                        int[] Index=Arraysort(TextSimilarity);
+                        try
+                        {
+                            int[] allToken=tokenize(text,77,Simple_tokenize);
+                            Tensor textTensor = Tensor.fromBlob(allToken, new long[]{1, 77});
+                            float[] Textfeature =sharedata.getModule_text().forward(IValue.from(textTensor)).toTensor().getDataAsFloatArray();
+                            float[] TextSimilarity=ConSimilarity(sharedata.getImageSetFeature(),Textfeature);
+                            int[] Index=Arraysort(TextSimilarity);
 
-                        sharedata.setSimilarity(TextSimilarity);
-                        Intent intent = new Intent();
-                        intent.putExtra("text", text);
-                        intent.putExtra("Index", Index);
-                        intent.setClass(TextActivity.this, Text2ImageShowActivity.class);
-                        startActivity(intent);
+                            sharedata.setSimilarity(TextSimilarity);
+                            Intent intent = new Intent();
+                            intent.putExtra("text", text);
+                            intent.putExtra("Index", Index);
+                            intent.setClass(TextActivity.this, Text2ImageShowActivity.class);
+                            startActivity(intent);
+                        }
+                        catch(NullPointerException e)
+                        {
+                            Toast.makeText(TextActivity.this, "存在非法字符或单词，请重新输入!", Toast.LENGTH_SHORT).show();
+                        }
 
                     }
                     return false;
@@ -64,7 +73,7 @@ public class TextActivity extends AppCompatActivity {
     }
 
 
-    public Tensor tokenize(String text, int context_length, Tokenizer Simple_tokenize)
+    public int[] tokenize(String text, int context_length, Tokenizer Simple_tokenize)
     {
 
         int startToken=Simple_tokenize.encoder.get("<|startoftext|>");
@@ -90,7 +99,7 @@ public class TextActivity extends AppCompatActivity {
                 allToken[i] = endToken;
             }
         }
-        Tensor inputTensor = Tensor.fromBlob(allToken, new long[]{1, context_length});
-        return inputTensor;
+        //Tensor inputTensor = Tensor.fromBlob(allToken, new long[]{1, context_length});
+        return allToken;
     }
 }

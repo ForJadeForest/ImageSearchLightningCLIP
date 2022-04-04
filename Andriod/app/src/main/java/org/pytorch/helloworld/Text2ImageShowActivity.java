@@ -7,6 +7,8 @@ import android.os.Bundle;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import java.util.ArrayList;
@@ -34,16 +36,19 @@ public class Text2ImageShowActivity extends AppCompatActivity {
         int[] Top=intent.getIntArrayExtra("Index");
         float[] TextSimilarity=sharedata.getSimilarity();
         float threshold=0;
-        int Showsize=30;
-        //初始化页面数据
+        int Showsize=0;
+
         for(int i=0;i<TextSimilarity.length;i++)
         {
-            threshold+=TextSimilarity[i];
-            if(threshold>0.2)
+            if(TextSimilarity[i]<0.001)
             {
                 Showsize=i;
                 break;
             }
+        }
+        if(Showsize<10)
+        {
+            Showsize=10;
         }
         for (int i = 0;i<Showsize;i++){
             Bean bean = new Bean();
@@ -57,7 +62,7 @@ public class Text2ImageShowActivity extends AppCompatActivity {
          * StaggeredGridLayoutManager 是一个瀑布流方式的manager
          */
 
-        StaggeredGridLayoutManager manager = new StaggeredGridLayoutManager(2,StaggeredGridLayoutManager.VERTICAL);
+        StaggeredGridLayoutManager manager = new StaggeredGridLayoutManager(1,StaggeredGridLayoutManager.VERTICAL);
         RecyclerView recyclerView = findViewById(R.id.list);
         MyAdapter myAdapter = new MyAdapter(data,this);
         //添加 adapter

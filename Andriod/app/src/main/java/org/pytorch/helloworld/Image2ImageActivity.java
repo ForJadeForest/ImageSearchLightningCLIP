@@ -10,6 +10,7 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,17 +34,22 @@ public class Image2ImageActivity extends AppCompatActivity {
         int[] Top=intent.getIntArrayExtra("ImageIndex");
         float[] ImageSimilarity=sharedata.getSimilarity();
         float threshold=0;
-        int Showsize=30;
+        int Showsize=0;
 
         for(int i=0;i<ImageSimilarity.length;i++)
         {
-            threshold+=ImageSimilarity[i];
-            if(threshold>0.2)
+            if(ImageSimilarity[i]<0.005)
             {
                 Showsize=i;
                 break;
             }
         }
+
+        if(Showsize<10)
+        {
+            Showsize=10;
+        }
+
         //初始化页面数据
         for (int i = 0;i<Showsize;i++){
             Bean bean = new Bean();

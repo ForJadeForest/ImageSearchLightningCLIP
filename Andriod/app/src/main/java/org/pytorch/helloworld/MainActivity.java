@@ -14,6 +14,8 @@ import android.media.Image;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
@@ -42,6 +44,8 @@ import org.pytorch.helloworld.Tokenizer;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import com.xiasuhuei321.loadingdialog.view.LoadingDialog;
+
 public class MainActivity extends AppCompatActivity {
 
   public static float[] TORCHVISION_NORM_MEAN_RGB = new float[] {0.481f, 0.458f, 0.408f};
@@ -49,13 +53,43 @@ public class MainActivity extends AppCompatActivity {
   public static int INPUT_TENSOR_WIDTH = 224;
   public static int INPUT_TENSOR_HEIGHT = 224;
 
+  private List<Bitmap> ImageSet = new ArrayList<Bitmap>();
+  private List<File> OriginImageSet=new ArrayList<>();
+
   public MainActivity() throws IOException {
   }
+
+  private class MyThread_load_image extends Thread
+  {
+    private int start = 0;
+    private int end = 100;
+
+    public MyThread_load_image(int start,int end)
+    {
+      this.start=start;
+      this.end=end;
+    }
+
+    @Override
+    public void run() {
+      for (int i = start; i < end; i++) {
+        try {
+          Bitmap bitmap = BitmapFactory.decodeFile(OriginImageSet.get(i).getPath(), getBitmapOption(4));
+          ImageSet.add(bitmap);
+        } catch (OutOfMemoryError e) {
+        }
+      }
+    }
+  }
+
+
+
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     //继承onCreate函数
     super.onCreate(savedInstanceState);
+    setTheme(R.style.AppTheme);//恢复原有的样式
     setContentView(R.layout.activity_main);
 
     getSupportActionBar().hide();
@@ -84,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
     String ImagePath=Environment.getExternalStoragePublicDirectory(DIRECTORY_DCIM).toString()+"/Camera/";
     File Imagefile = new File(ImagePath);
     File [] fileSet =Imagefile.listFiles();
-    List<File> OriginImageSet=new ArrayList<>();
+
 
     for(File file:fileSet ){
       if(file.getName().endsWith(".jpg") || file.getName().endsWith(".png"))
@@ -94,7 +128,30 @@ public class MainActivity extends AppCompatActivity {
       Log.d(""," 文件名："+file.getName()+"文件路径 ："+file.getAbsolutePath());
     }
     //imageView.setImageURI(Uri.fromFile(OriginImageSet.get(0)));
-    List<Bitmap> ImageSet = new ArrayList<Bitmap>();
+
+
+    MyThread_load_image[] myLoadImageThread=Generate_ThreadGroup(8,OriginImageSet.size());
+    LoadingDialog ld = new LoadingDialog(this);
+    ld.setLoadingText("加载中")
+            .setSuccessText("成功加载图库")//显示加载成功时的文字
+            //.setFailedText("加载失败")
+            .show();
+//在你代码中合适的位置调用反馈
+//ld.loadFailed();
+
+    for(MyThread_load_image i:myLoadImageThread)
+    {
+      i.start();
+    }
+    try {
+      for(MyThread_load_image i:myLoadImageThread)
+      {
+        i.join();
+      }
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+/*
     for(int i=0;i<OriginImageSet.size();i++)
     {
       try {
@@ -104,6 +161,8 @@ public class MainActivity extends AppCompatActivity {
       catch (OutOfMemoryError e)
       { }
     }
+
+ */
 
     final ShareData sharedata = (ShareData)getApplication();
     List<Bitmap> ShareImageSet=new ArrayList<>(ImageSet);
@@ -117,7 +176,7 @@ public class MainActivity extends AppCompatActivity {
 
     try {
       module_image = LiteModuleLoader.load(assetFilePath(this, "image_encode.ptl"));
-      module_text = LiteModuleLoader.load(assetFilePath(this, "text_encode.ptl"));
+      module_text = LiteModuleLoader.load(assetFilePath(this, "tiny_text_encode.ptl"));
       sharedata.setModule_image(module_image);
       sharedata.setModule_text(module_text);
     } catch (IOException e) {
@@ -138,6 +197,7 @@ public class MainActivity extends AppCompatActivity {
       t_tensor = module_image.forward(IValue.from(t_tensor)).toTensor();
       ImageFeatureSet[i] = t_tensor.getDataAsFloatArray();
     }
+    ld.loadSuccess();
     sharedata.setImageSetFeature(ImageFeatureSet);
   }
 
@@ -147,8 +207,11 @@ public class MainActivity extends AppCompatActivity {
   {
     System.gc();
     BitmapFactory.Options options = new BitmapFactory.Options();
+    options.inJustDecodeBounds = true;
+
     options.inPurgeable = true;
     options.inSampleSize = inSampleSize;
+    options.inJustDecodeBounds = false;
     return options;
   }
 
@@ -170,7 +233,25 @@ public class MainActivity extends AppCompatActivity {
       return file.getAbsolutePath();
     }
   }
+  public MyThread_load_image[] Generate_ThreadGroup(int num_thread, int imageSize)
+  {
+    MyThread_load_image[] myThread=new MyThread_load_image[num_thread];
+    int basesize=imageSize/num_thread;
+    int lastsize=imageSize%num_thread;
+    for(int i=0;i<myThread.length;i++)
+    {
+      if(i!=myThread.length-1)
+      {
+        myThread[i]=new MyThread_load_image(i*basesize,(i+1)*basesize);
+      }
+      else
+      {
+        myThread[i]=new MyThread_load_image(i*basesize,(i+1)*basesize+lastsize);
+      }
 
+    }
+    return myThread;
+  }
 
   public static float[] ConSimilarity(float[][] ImageFeatures,float[] TextFeatures)
   {

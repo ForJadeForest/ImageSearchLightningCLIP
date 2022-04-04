@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.pytorch.helloworld">
 
+    <uses-sdk android:minSdkVersion="24">
+
+    </uses-sdk>
     <uses-feature
         android:name="android.hardware.camera"
         android:required="true" />
@@ -12,9 +15,9 @@
 
     <application
         android:name=".ShareData"
+        android:label="@string/app_name"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="Image classification"
         android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
@@ -61,7 +64,8 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".TextActivity" />
         </activity>
-        <activity android:name=".MainActivity">
+        <activity android:name=".MainActivity"
+            android:theme="@style/AppTheme.StartingWindowTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

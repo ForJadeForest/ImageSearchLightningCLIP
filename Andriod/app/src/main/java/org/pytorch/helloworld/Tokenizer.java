@@ -129,7 +129,9 @@ public class Tokenizer {
         int [] bpe_token=new int[texts.length];
         for(int i=0;i<texts.length;i++)
         {
-            bpe_token[i]=encoder.get(texts[i]+"</w>");
+            //int t_token=encoder.getOrDefault(texts[i]+"</w>",-1);
+            int t_token=encoder.get(texts[i]+"</w>");
+            bpe_token[i]=t_token;
         }
         return bpe_token;
     }
