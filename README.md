@@ -88,7 +88,7 @@ Using distilled CLIP model to deploy the android device
 
 ## App使用演示
 
-![show](C:\Users\Chao\Desktop\NLP\ImageSearchLightningCLIP\show.gif)
+![show](show.gif)
 
 # （三）版本更新日志
 
