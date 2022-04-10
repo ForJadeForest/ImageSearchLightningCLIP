@@ -1,0 +1,72 @@
+│  filetree.txt
+│  
+└─main
+    │  AndroidManifest.xml--应用清单（组织各个页面）
+    │  
+    ├─assets--资源文件夹
+    │      .gitattributes
+    │      image_encode.ptl--图像编码器模型
+    │      tiny_text_encode.ptl--文本编码器模型
+    │      vocab.txt--文本词典
+    │      
+    ├─java--程序关键部分
+    │  └─org
+    │      └─pytorch
+    │          └─helloworld
+    │                  Bean.java--瀑布流实现必要类--存储item内容
+    │                  MyAdapter.java--瀑布流实现必要类--适配器类
+    │                  Image2ImageActivity.java--图片展示界面1
+    │                  ImageActivity.java--拍照界面（图片推理）
+    │                  MainActivity.java--主界面
+    │                  ShareData.java--存储全局共享变量
+    │                  Text2ImageActivity.java--图片展示界面2
+    │                  TextActivity.java--文本框输入界面（文本推理）
+    │                  Tokenizer.java--文本预处理类（string->token）
+    │                  
+    └─res--界面资源文件
+        ├─drawable
+        │      bg_main.png--UI背景图片1
+        │      bg_vision.png--UI背景图片2
+        │      ic_launcher_background.xml--图标设计
+        │      round_corner.xml--图片展示外观设计
+        │      search_box.xml--文本搜索框外观设计
+        │      start_window.png--启动页图片
+        │      
+        ├─drawable-v24
+        │      ic_launcher_foreground.xml
+        │      
+        ├─layout--对应java文件的UI布局文件
+        │      activity_image.xml
+        │      activity_main.xml
+        │      activity_text.xml
+        │      image_show.xml--瀑布流主文件
+        │      list_item.xml--瀑布流子文件
+        │      
+        ├─mipmap-hdpi
+        │      ic_launcher.png
+        │      ic_launcher_round.png
+        │      
+        ├─mipmap-mdpi
+        │      ic_launcher.png
+        │      ic_launcher_round.png
+        │      
+        ├─mipmap-xhdpi
+        │      ic_launcher.png
+        │      ic_launcher_round.png
+        │      
+        ├─mipmap-xxhdpi
+        │      ic_launcher.png
+        │      ic_launcher_round.png
+        │      
+        ├─mipmap-xxxhdpi
+        │      ic_launcher.png
+        │      ic_launcher_round.png
+        │      
+        ├─values--主体设计文件
+        │      colors.xml
+        │      strings.xml
+        │      styles.xml
+        │      
+        └─xml
+                file_paths.xml--拍照图片的临时保存路径
+                

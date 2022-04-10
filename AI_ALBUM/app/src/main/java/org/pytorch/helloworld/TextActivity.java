@@ -26,7 +26,6 @@ public class TextActivity extends AppCompatActivity {
         setContentView(R.layout.activity_text);
 
         getSupportActionBar().hide();
-        //去掉最上面时间、电量等
         this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         try {
@@ -54,7 +53,7 @@ public class TextActivity extends AppCompatActivity {
                             Intent intent = new Intent();
                             intent.putExtra("text", text);
                             intent.putExtra("Index", Index);
-                            intent.setClass(TextActivity.this, Text2ImageShowActivity.class);
+                            intent.setClass(TextActivity.this, Text2ImageActivity.class);
                             startActivity(intent);
                         }
                         catch(NullPointerException e)
@@ -79,8 +78,6 @@ public class TextActivity extends AppCompatActivity {
         int startToken=Simple_tokenize.encoder.get("<|startoftext|>");
         int endToken=Simple_tokenize.encoder.get("<|endoftext|>");
 
-        //int startToken=Tokenizer.encode();
-        //int endToken=49407;
 
         //int [] textToken=Simple_tokenize.encode(text);
         int [] textToken=Tokenizer.encode(text);

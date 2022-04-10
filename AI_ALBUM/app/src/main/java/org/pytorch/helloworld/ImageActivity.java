@@ -2,72 +2,53 @@ package org.pytorch.helloworld;
 
 import static org.pytorch.helloworld.MainActivity.*;
 
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.FileProvider;
-import androidx.core.graphics.drawable.RoundedBitmapDrawable;
-import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory;
 
 import android.Manifest;
-import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import android.Manifest;
-import android.app.Activity;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.os.Build;
-import android.os.Bundle;
-import android.provider.MediaStore;
-import android.view.Window;
+
 import android.widget.Toast;
-import android.provider.MediaStore.Images.Thumbnails;
-import com.shehuan.niv.NiceImageView;
 import org.pytorch.IValue;
 import org.pytorch.MemoryFormat;
 import org.pytorch.Tensor;
 import org.pytorch.torchvision.TensorImageUtils;
 
 
-
-
 public class ImageActivity extends AppCompatActivity {
 
-
-    private static final int REQUEST_CODE = 1;
-    private static final int MY_PERMISSIONS_REQUEST_CODE = 2;
     private Bitmap bitmap=null;
+    private static final int REQUEST_IMAGE = 1;
+    private static final String[] authCameraArr = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
+    private static final int authCameraRequestCode = 5;
+    String currentPhotoPath;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_image);
 
         getSupportActionBar().hide();
-        //去掉最上面时间、电量等
         this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
 
@@ -83,9 +64,7 @@ public class ImageActivity extends AppCompatActivity {
             }
         }
 
-
         startCamera();
-        //requestCameraPermission();
 
         Button button_image = (Button) findViewById(R.id.find_similar);
         final ShareData sharedata = (ShareData)getApplication();
@@ -108,9 +87,7 @@ public class ImageActivity extends AppCompatActivity {
         });
     }
 
-    private static final int REQUEST_IMAGE = 1;
-    private static final String[] authCameraArr = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
-    private static final int authCameraRequestCode = 5;
+
 
 
     //判断当前是否具备所需权限
@@ -150,8 +127,6 @@ public class ImageActivity extends AppCompatActivity {
             startActivityForResult(intent, REQUEST_IMAGE);
         }
     }
-
-    String currentPhotoPath;
 
     private File createImageFile() throws IOException {
         // Create an image file name

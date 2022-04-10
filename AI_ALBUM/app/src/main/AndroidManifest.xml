@@ -58,7 +58,7 @@
                 android:value=".ImageActivity" />
         </activity>
         <activity
-            android:name=".Text2ImageShowActivity"
+            android:name=".Text2ImageActivity"
             android:parentActivityName=".TextActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"

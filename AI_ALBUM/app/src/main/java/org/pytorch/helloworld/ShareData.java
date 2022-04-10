@@ -1,10 +1,9 @@
 package org.pytorch.helloworld;
 
-import android.os.Bundle;
+
 
 import android.app.Application;
 import android.graphics.Bitmap;
-import android.os.Bundle;
 
 import org.pytorch.Module;
 

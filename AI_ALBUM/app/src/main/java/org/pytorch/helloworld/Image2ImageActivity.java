@@ -1,16 +1,12 @@
 package org.pytorch.helloworld;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.WindowManager;
-import android.widget.ImageView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +18,7 @@ public class Image2ImageActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_text2_image_show);
+        setContentView(R.layout.image_show);
 
         getSupportActionBar().hide();
         //去掉最上面时间、电量等
@@ -33,7 +29,6 @@ public class Image2ImageActivity extends AppCompatActivity {
         //getXxxExtra方法获取Intent传递过来的数据
         int[] Top=intent.getIntArrayExtra("ImageIndex");
         float[] ImageSimilarity=sharedata.getSimilarity();
-        float threshold=0;
         int Showsize=0;
 
         for(int i=0;i<ImageSimilarity.length;i++)

@@ -5,16 +5,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.WindowManager;
-import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Text2ImageShowActivity extends AppCompatActivity {
+public class Text2ImageActivity extends AppCompatActivity {
 
     //页面数据
     private final List<Bean> data = new ArrayList<>();
@@ -22,7 +19,7 @@ public class Text2ImageShowActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_text2_image_show);
+        setContentView(R.layout.image_show);
 
         getSupportActionBar().hide();
         //去掉最上面时间、电量等
@@ -35,7 +32,6 @@ public class Text2ImageShowActivity extends AppCompatActivity {
         String text=intent.getStringExtra("text");
         int[] Top=intent.getIntArrayExtra("Index");
         float[] TextSimilarity=sharedata.getSimilarity();
-        float threshold=0;
         int Showsize=0;
 
         for(int i=0;i<TextSimilarity.length;i++)

@@ -10,18 +10,11 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
-import android.media.Image;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
-import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.TextView;
+
 
 //pytorch的库
 import org.pytorch.IValue;
@@ -32,14 +25,13 @@ import org.pytorch.torchvision.TensorImageUtils;
 import org.pytorch.MemoryFormat;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import org.pytorch.helloworld.Tokenizer;
+
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -151,18 +143,7 @@ public class MainActivity extends AppCompatActivity {
     } catch (InterruptedException e) {
       e.printStackTrace();
     }
-/*
-    for(int i=0;i<OriginImageSet.size();i++)
-    {
-      try {
-        Bitmap bitmap = BitmapFactory.decodeFile(OriginImageSet.get(i).getPath(), getBitmapOption(4));
-        ImageSet.add(bitmap);
-      }
-      catch (OutOfMemoryError e)
-      { }
-    }
 
- */
 
     final ShareData sharedata = (ShareData)getApplication();
     List<Bitmap> ShareImageSet=new ArrayList<>(ImageSet);
