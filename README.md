@@ -1,17 +1,31 @@
 # ImageSearchLightningCLIP
+
+[TOC]
+
+## 1 应用介绍
+
+### 1.1 项目简介
+
 Using distilled CLIP model to deploy the android device
 
-# （一）应用介绍
+### 1.2 APP下载：
 
-# （二）使用说明
+链接：https://pan.baidu.com/s/17kY5w0A1KB9EMgJsCPxfaw?pwd=oyd4 
+提取码：oyd4
 
-## 	快速开始
+二维码：
+
+<img src="app.png" alt="app" style="zoom:50%;" />
+
+## 2 使用说明
+
+### 	2.1 快速开始
 
 ```
 下载Android Studio->下载zip或git glone ‘AI_ALBUM’文件夹->用AS打开项目->连接手机编译即可
 ```
 
-## 目录树
+### 2.2 目录树
 
 ```
 "AI_ALBUM/app/src/"下的目录（关键文件有说明）
@@ -86,19 +100,19 @@ Using distilled CLIP model to deploy the android device
                 file_paths.xml--拍照图片的临时保存路径
 ```
 
-## App使用演示
+### 2.3 App使用演示
 
 ![show](show.gif)
 
-# （三）版本更新日志
+## 3 版本更新日志
 
-## 1.0--AI ALBUM--2022.04.01
+### 1.0--AI ALBUM--2022.04.01
 
-### 	实现功能：
+#### 	实现功能：
 
 ​				实现基本的功能与界面设计；
 
-### 	存在的问题：	
+#### 	存在的问题：	
 
 ​				导入图片速度过慢；
 
@@ -108,8 +122,8 @@ Using distilled CLIP model to deploy the android device
 
 ​				初始界面无加载页面或动画，体验较差
 
-## 2.0--AI ALBUM--2022.04.04
-### 	实现功能：
+### 2.0--AI ALBUM--2022.04.04
+#### 	实现功能：
 
 ​				优化载入图库效率，加载时间缩短为原来1/3；
 
@@ -119,7 +133,7 @@ Using distilled CLIP model to deploy the android device
 
 ​				优化了图片的展示布局；
 
-### 	存在的问题：	
+#### 	存在的问题：	
 
 ​				词典没有扩充，内容覆盖范围不够；
 
