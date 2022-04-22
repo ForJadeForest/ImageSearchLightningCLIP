@@ -8,7 +8,7 @@ from torch import nn
 from torch.nn import functional as F
 from torchmetrics.functional import accuracy
 
-from .utils import add_similarity
+from .utils import cal_logits
 
 
 class MInterface(pl.LightningModule):
@@ -29,86 +29,37 @@ class MInterface(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         stu_encode, tea_encode = self(batch)
-
-        losses = []
-        for (loss_name, loss), scale in zip(self.loss_function.items(), self.hparams.loss_scale):
-            if loss_name == 'kl':
-                loss_res = loss(
-                    F.softmax(stu_encode / self.hparams.t, dim=1).log(),
-                    F.softmax(tea_encode / self.hparams.t, dim=1)
-                ) * self.hparams.t ** 2
-
-            elif loss_name == 'l1':
-                loss_res = loss(stu_encode, tea_encode)
-            else:
-                loss_res = loss(stu_encode, tea_encode)
-            loss_res *= scale
-            self.log('loss/' + loss_name, loss_res.item(), on_step=True, on_epoch=True, prog_bar=False)
-            losses.append(loss_res)
-
-        if self.hparams.weight:
-            assert len(self.hparams.weight) == len(
-                losses), 'the number of self.weight should be the same as the number of loss'
-            assert sum(self.hparams.weight) == 1, 'sum of wight should be 1, instead of {}'.format(
-                sum(self.hparams.weight))
-            total_loss = sum([loss * weight for loss, weight in zip(losses, self.hparams.weight)])
-        else:
-            total_loss = sum(losses) / len(losses)
-        return total_loss
+        return self.cal_loss(stu_encode, tea_encode, 'train')
 
     def validation_epoch_end(self, outputs) -> None:
-        add_similarity(self.model, self.logger.experiment, self.current_epoch, device=self.device,
-                       model_name=self.hparams.model_name)
+        # add_similarity(self.model, self.logger.experiment, self.current_epoch, device=self.device,
+        #                model_name=self.hparams.model_name)
+        pass
 
     def validation_step(self, batch, batch_idx):
         img_tensor, captions, sentence = batch
+
+        (stu_logits_text, tea_logits_text, stu_logits_img, tea_logits_img), stu_encode, tea_encode = cal_logits(
+            self.hparams.model_name, self.model, captions,
+            img_tensor)
+
+        self.cal_loss(stu_encode, tea_encode, 'val')
         if self.hparams.model_name == 'model_text_distilled':
-            stu_encode, tea_encode = self(captions)
+            stu_logits, tea_logits = stu_logits_text, tea_logits_text
         else:
-            stu_encode, tea_encode = self(img_tensor)
-        text_encode = self.model.teacher.encode_text(captions).float()
-        losses = []
-        for (loss_name, loss), scale in zip(self.loss_function.items(), self.hparams.loss_scale):
-            if loss_name == 'kl':
-                loss_res = loss(
-                    F.softmax(stu_encode / self.hparams.t, dim=1).log(),
-                    F.softmax(tea_encode / self.hparams.t, dim=1)
-                ) * self.hparams.t ** 2
-            elif loss_name == 'l1':
-                loss_res = loss(stu_encode, tea_encode)
+            stu_logits, tea_logits = stu_logits_img, tea_logits_img
+
+        stu_logits, tea_logits = stu_logits.softmax(dim=-1), tea_logits.softmax(dim=-1)
+
+        label = torch.arange(stu_encode.shape[0], device=self.device)
+        k_list = [i for i in [1, 2, 3, 4, 5, 10, 20, 30, 50] if i < self.hparams.batch_size]
+        for k in k_list:
+            if k == 1:
+                acc = accuracy(stu_logits, label, top_k=1)
+                self.log('val_acc', acc, on_epoch=True, on_step=False, prog_bar=False, sync_dist=True)
             else:
-                stu_encode = stu_encode / stu_encode.norm(dim=1, keepdim=True)
-                text_encode = text_encode / text_encode.norm(dim=1, keepdim=True)
-                logits = (100 * stu_encode @ text_encode.T).softmax(dim=-1)
-                label = torch.arange(len(logits), device=self.device)
-                loss_res = loss(logits, label)
-            loss_res *= scale
-            self.log('val_loss/' + loss_name, loss_res.item(), on_step=True, on_epoch=True, prog_bar=False)
-            losses.append(loss_res)
-
-        if self.hparams.weight:
-            assert len(self.hparams.weight) == len(
-                losses), 'the number of self.weight should be the same as the number of loss'
-            assert sum(self.hparams.weight) == 1, 'sum of wight should be 1, instead of {}'.format(
-                sum(self.hparams.weight))
-            total_loss = sum([loss * weight for loss, weight in zip(losses, self.hparams.weight)])
-        else:
-            total_loss = sum(losses) / len(losses)
-
-        stu_encode = stu_encode / stu_encode.norm(dim=1, keepdim=True)
-        text_encode = text_encode / text_encode.norm(dim=1, keepdim=True)
-
-        stu_logits_per_image = (stu_encode @ text_encode.t())
-        label = torch.arange(stu_logits_per_image.shape[0], device=self.device)
-
-        for k in ['', 1, 2, 3, 4, 5, 10, 20, 30, 50]:
-            if k == '':
-                acc = accuracy(stu_logits_per_image, label, top_k=1)
-                self.log('val_acc', acc, on_epoch=True, on_step=False, prog_bar=False)
-            else:
-                acc = accuracy(stu_logits_per_image, label, top_k=k)
-                self.log('val_acc/top{}'.format(k), acc, on_epoch=True, on_step=False, prog_bar=False)
-        self.log('val_loss/' + 'total_loss', total_loss.item(), on_step=False, on_epoch=True, prog_bar=False)
+                acc = accuracy(stu_logits, label, top_k=k)
+                self.log('val_acc/top{}'.format(k), acc, on_epoch=True, on_step=False, prog_bar=False, sync_dist=True)
         return
 
     def test_step(self, batch, batch_idx):
@@ -169,8 +120,7 @@ class MInterface(pl.LightningModule):
         # class name corresponding `CamelCase`.
         camel_name = ''.join([i.capitalize() for i in name.split('_')])
         try:
-            Model = getattr(importlib.import_module(
-                '.' + name, package=__package__), camel_name)
+            Model = getattr(importlib.import_module('.' + name, package=__package__), camel_name)
         except:
             raise ValueError(
                 f'Invalid Module File Name or Invalid Class Name {name}.{camel_name}!')
@@ -189,3 +139,36 @@ class MInterface(pl.LightningModule):
                 args1[arg] = getattr(self.hparams, arg)
         args1.update(other_args)
         return Model(**args1)
+
+    def cal_loss(self, stu_encode, tea_encode, step_name):
+        losses = []
+        for (loss_name, loss), scale in zip(self.loss_function.items(), self.hparams.loss_scale):
+            if loss_name == 'kl':
+                loss_res = loss(
+                    F.softmax(stu_encode / self.hparams.t, dim=1).log(),
+                    F.softmax(tea_encode / self.hparams.t, dim=1)
+                ) * self.hparams.t ** 2
+            elif loss_name == 'l1':
+                loss_res = loss(stu_encode, tea_encode)
+            elif loss_name == 'ce':
+                loss_res = loss(
+                    stu_encode.softmax(dim=1),
+                    tea_encode.softmax(dim=1)
+                )
+            else:
+                raise ValueError('loss function not found!')
+            loss_res *= scale
+            self.log('{}_loss/'.format(step_name) + loss_name, loss_res.item(), on_step=True, on_epoch=True,
+                     prog_bar=False)
+            losses.append(loss_res)
+
+        if self.hparams.weight:
+            assert len(self.hparams.weight) == len(
+                losses), 'the number of self.weight should be the same as the number of loss'
+            assert sum(self.hparams.weight) == 1, 'sum of wight should be 1, instead of {}'.format(
+                sum(self.hparams.weight))
+            total_loss = sum([loss * weight for loss, weight in zip(losses, self.hparams.weight)])
+        else:
+            total_loss = sum(losses) / len(losses)
+        self.log('{}_loss/total_loss'.format(step_name), total_loss.item(), on_step=True, on_epoch=True, prog_bar=False)
+        return total_loss

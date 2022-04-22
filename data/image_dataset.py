@@ -26,14 +26,15 @@ class ImageDataset(Dataset):
         # rantee is the `self.path_list` must be given a valid value.
 
         if self.train:
-            train_image_file_list_path = op.join(self.data_dir, 'train2017')
-            self.path_list = [op.join(train_image_file_list_path, i) for i in os.listdir(train_image_file_list_path)]
+            train_image_file_list_path = op.join(self.data_dir, 'COCO', 'train2017')
+            self.path_list = [op.join(train_image_file_list_path, i) for i in os.listdir(train_image_file_list_path) if
+                              not i.startswith('imagenet')]
         else:
-            val_image_file_list_path = op.join(self.data_dir, 'val2017')
+            val_image_file_list_path = op.join(self.data_dir, 'COCO', 'val2017')
             self.path_list = []
             self.captions = []
             self.sentence = []
-            self.annotations_dir = op.join(self.data_dir, 'annotations')
+            self.annotations_dir = op.join(self.data_dir, 'COCO', 'annotations')
             with open(op.join(self.annotations_dir, 'captions_val2017.json'), 'r') as f:
                 data = json.load(f)
             images = data['images']
@@ -55,8 +56,16 @@ class ImageDataset(Dataset):
 
     def __getitem__(self, idx):
         path = self.path_list[idx]
+
         img = Image.open(path).convert('RGB')
+        # try:
+        #     img = jpeg4py.JPEG(path).decode()
+        #     img = transforms.ToPILImage()(img)
+        # except:
+        #     img = Image.open(path).convert('RGB')
+        # img = Image.fromarray(img)
         trans = transforms.Compose([
+
             transforms.Resize(224),
             transforms.CenterCrop(224),
             transforms.RandomHorizontalFlip(self.aug_prob),

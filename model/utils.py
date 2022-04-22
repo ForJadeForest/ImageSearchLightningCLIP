@@ -63,31 +63,16 @@ def add_similarity(model, tb_write, epoch, **kwargs):
     image_input = torch.tensor(np.stack(images), device=kwargs['device'])
     text_tokens = tokenize([desc for desc in texts]).to(kwargs['device'])
 
-    if kwargs['model_name'] == 'model_text_distilled':
-        text_features, tea_text_features = model(text_tokens)
-        image_features = model.teacher.encode_image(image_input).float()
-        image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-        tea_text_features = tea_text_features / tea_text_features.norm(dim=-1, keepdim=True)
-        text_features = text_features / text_features.norm(dim=-1, keepdim=True)
+    stu_text_logits, tea_text_logits = cal_logits(kwargs['model_name'], model, text_tokens, image_input)[0][:2]
+    similarity100 = (100 * stu_text_logits).softmax(dim=-1).cpu().numpy()
+    stu_text_logits, tea_text_logits = stu_text_logits.softmax(dim=-1).cpu().numpy(), tea_text_logits.softmax(
+        dim=-1).cpu().numpy()
 
-        similarity = (image_features @ text_features.T).softmax(dim=-1).cpu().numpy()
-        tea_similarity = (image_features @ tea_text_features.T).softmax(dim=-1).cpu().numpy()
-        similarity100 = (100 * image_features @ text_features.T).softmax(dim=-1).cpu().numpy()
-    else:
-        image_features, tea_image_features = model(image_input)
-        text_features = model.teacher.encode_text(text_tokens).float()
-        image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-        tea_image_features = tea_image_features / tea_image_features.norm(dim=-1, keepdim=True)
-        text_features = text_features / text_features.norm(dim=-1, keepdim=True)
-        similarity = (text_features @ image_features.T).softmax(dim=-1).cpu().numpy()
-        tea_similarity = (text_features @ tea_image_features.T).softmax(dim=-1).cpu().numpy()
-        similarity100 = (100 * text_features @ image_features.T).softmax(dim=-1).cpu().numpy()
-    tb_write.add_figure('Similarity/student', generate_figure(similarity, texts, original_images), epoch)
-    tb_write.add_figure('Similarity/teacher', generate_figure(tea_similarity, texts, original_images), epoch)
+    tb_write.add_figure('Similarity/student', generate_figure(stu_text_logits, texts, original_images), epoch)
+    tb_write.add_figure('Similarity/teacher', generate_figure(tea_text_logits, texts, original_images), epoch)
     tb_write.add_figure('Similarity/100 * student', generate_figure(similarity100, texts, original_images), epoch)
 
     plt.clf()
-
     plt.close("all")
 
 
@@ -126,3 +111,29 @@ def imageQuery(query, model, encodes_path, file_path, device, tb_write, epoch):
         plt.axis("off")
     tb_write.add_figure('Similarity/teacher', figure, epoch)
     tb_write.add_figure('Similarity/100 * student', figure, epoch)
+
+
+def norm_and_logits(stu_image_encode, stu_text_encode, tea_image_encode, tea_text_encode):
+    stu_image_encode = stu_image_encode / stu_image_encode.norm(dim=1, keepdim=True)
+    stu_text_encode = stu_text_encode / stu_text_encode.norm(dim=1, keepdim=True)
+    tea_image_encode = tea_image_encode / tea_image_encode.norm(dim=1, keepdim=True)
+    tea_text_encode = tea_text_encode / tea_text_encode.norm(dim=1, keepdim=True)
+    stu_text_logits = stu_text_encode @ stu_image_encode.t()
+    tea_text_logits = tea_text_encode @ tea_image_encode.t()
+    return stu_text_logits, tea_text_logits, stu_text_logits.T, tea_text_logits.T
+
+
+def cal_logits(model_name, model, captions, img_tensor):
+    if model_name == 'model_text_distilled':
+        stu_encode, tea_encode = model(captions)
+        other_encode = model.teacher.encode_image(img_tensor).float()
+        stu_image_encode, stu_text_encode = other_encode, stu_encode
+        tea_image_encode, tea_text_encode = other_encode, tea_encode
+
+    else:
+        stu_encode, tea_encode = model(img_tensor)
+        other_encode = model.teacher.encode_text(captions).float()
+        stu_image_encode, stu_text_encode = stu_encode, other_encode
+        tea_image_encode, tea_text_encode = tea_encode, other_encode
+
+    return norm_and_logits(stu_image_encode, stu_text_encode, tea_image_encode, tea_text_encode), stu_encode, tea_encode

@@ -33,7 +33,6 @@ class TextDataset(Dataset):
             with cc_file.open('r', encoding='utf8') as f:
                 for content in f.readlines():
                     raw_text.append(content.split('\t')[0])
-
             with coco2017_file.open('r', encoding='utf8') as f:
                 res = json.load(f)
                 for annotation in res['annotations']:
@@ -92,8 +91,6 @@ class TextDataset(Dataset):
                     ]
                 }, cache_path)
                 return sentences, captions, path_list
-
-
         else:
             print('直接加载缓存文件')
             data = torch.load(cache_path)['data_set']
