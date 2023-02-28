@@ -29,7 +29,7 @@ class TextDataset(Dataset):
         if self.train:
             coco2017_file = self.data_dir / 'COCO' / 'annotations' / 'captions_train2017.json'
             cc_file = self.data_dir / 'CC' / 'Train_GCC-training.tsv'
-            print(coco2017_file)
+
             with cc_file.open('r', encoding='utf8') as f:
                 for content in f.readlines():
                     raw_text.append(content.split('\t')[0])
@@ -41,12 +41,7 @@ class TextDataset(Dataset):
             print('All data: {} Begin tokenizing...'.format(len(raw_text)))
             tokenize_text = []
             for text in tqdm(raw_text):
-                try:
-                    tokenize_text.append(self.tokenizer(text).squeeze())
-                except:
-                    continue
-            print('Tokenize Done! with {} texts loads'.format(len(tokenize_text)))
-            print('the rate is {}'.format(len(tokenize_text) / len(raw_text)))
+                tokenize_text.append(self.tokenizer(text).squeeze(), truncate=True)
 
             return torch.stack(tokenize_text)
         else:

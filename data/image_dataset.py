@@ -20,19 +20,13 @@ class ImageDataset(Dataset):
         self.check_files()
 
     def check_files(self):
-        # This part is the core code block for load your own dataset.
-        # You can choose to scan a folder, or load a file list pickle
-        # file, or any other formats. The only thing you need to gua-
-        # rantee is the `self.path_list` must be given a valid value.
-
         if self.train:
-            train_image_file_list_path = op.join(self.data_dir, 'COCO', 'train2017')
-            self.path_list = [op.join(train_image_file_list_path, i) for i in os.listdir(train_image_file_list_path) if
-                              not i.startswith('imagenet')]
+            train_image_file_list_path = op.join(self.data_dir, 'image')
+            self.path_list = [op.join(train_image_file_list_path, i) for i in os.listdir(train_image_file_list_path)]
         else:
             val_image_file_list_path = op.join(self.data_dir, 'COCO', 'val2017')
             self.path_list = []
-            self.captions = []
+            self.tokenized_captions = []
             self.sentence = []
             self.annotations_dir = op.join(self.data_dir, 'COCO', 'annotations')
             with open(op.join(self.annotations_dir, 'captions_val2017.json'), 'r') as f:
@@ -48,7 +42,7 @@ class ImageDataset(Dataset):
                 caption = id2caption.get(id, None)
                 if caption:
                     self.sentence.append(caption)
-                    self.captions.append(self.tokenizer(caption).squeeze())
+                    self.tokenized_captions.append(self.tokenizer(caption).squeeze())
                     self.path_list.append(op.join(val_image_file_list_path, file_name))
 
     def __len__(self):
@@ -58,14 +52,7 @@ class ImageDataset(Dataset):
         path = self.path_list[idx]
 
         img = Image.open(path).convert('RGB')
-        # try:
-        #     img = jpeg4py.JPEG(path).decode()
-        #     img = transforms.ToPILImage()(img)
-        # except:
-        #     img = Image.open(path).convert('RGB')
-        # img = Image.fromarray(img)
         trans = transforms.Compose([
-
             transforms.Resize(224),
             transforms.CenterCrop(224),
             transforms.RandomHorizontalFlip(self.aug_prob),
@@ -85,4 +72,4 @@ class ImageDataset(Dataset):
         if self.train:
             return img_tensor
         else:
-            return img_tensor, self.captions[idx], self.sentence[idx]
+            return img_tensor, self.tokenized_captions[idx], self.sentence[idx]

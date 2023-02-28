@@ -52,29 +52,23 @@ def main(args):
     """
 
     trainer = Trainer.from_argparse_args(args,
-                                         gpus=[2, 3],
                                          enable_progress_bar=True,
                                          auto_select_gpus=True,
                                          gradient_clip_val=5,
                                          )
-    if args.tune == 'true':
-        trainer.tune(model, data_module)
-        print('the new lr is :', model.hparams.lr)
-    else:
-        trainer.fit(model, data_module)
+
+    trainer.fit(model, data_module)
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
 
-    # Experiment setting
-
-    parser.add_argument('--save_dir', default='/code/pyz/checkpoint/CLIP', type=str)
+    # Experiment setting for Tensorboard
+    parser.add_argument('--save_dir', default='./checkpoint', type=str)
     parser.add_argument('--name', default=None, type=str)
     parser.add_argument('--version', default=None, type=int)
 
     # Trainer Control
-    parser.add_argument('--epoch_num', default=500, type=int)
     parser.add_argument('--precision', default=16, type=int)
     parser.add_argument('--strategy', default='ddp', type=str)
     parser.add_argument('--tune', default='false', type=str)
@@ -84,10 +78,10 @@ if __name__ == '__main__':
     parser.add_argument('--max_epochs', default=500, type=int)
     parser.add_argument('--num_workers', default=36, type=int)
     parser.add_argument('--seed', default=2022, type=int)
-    # parser.add_argument('--lr', default=0.0001445439770745928 * 2, type=float)
-    parser.add_argument('--lr', default=0.00012022644346174131 * 2, type=float)
+    parser.add_argument('--lr', default=0.001, type=float)
+    parser.add_argument('--weight_decay', default=1e-5, type=float)
+    parser.add_argument('--gpus', default=[0, 1, 2, 3], nargs='+', type=list)
 
-    # parser.add_argument('--lr', default=0.0002511886431509582, type=float)
 
     # LR Scheduler
     parser.add_argument('--lr_scheduler', choices=['step', 'cosine'], type=str, default='step')
@@ -103,7 +97,7 @@ if __name__ == '__main__':
 
     # Training Info
     parser.add_argument('--dataset', default='image_dataset', type=str)
-    parser.add_argument('--data_dir', default='/data/pyz/data', type=str)
+    parser.add_argument('--data_dir', default='/path/to/data', type=str)
     parser.add_argument('--model_name', default='model_image_distilled', type=str)
     parser.add_argument('--teacher_name', default='ViT-B/32', type=str)
     parser.add_argument('--no_augment', action='store_true')
@@ -117,7 +111,7 @@ if __name__ == '__main__':
     parser.add_argument('--layers', default=6, type=int)
     parser.add_argument('--heads', default=24, type=int)
 
-    # Transformer Model Hyperparameters
+    # Language Transformer Model Hyperparameters
     """
      context_length, vocab_size, transformer_width, transformer_layers, transformer_heads, output_dim
     """
@@ -138,12 +132,9 @@ if __name__ == '__main__':
     parser.add_argument('--weight', default=[0.6, 0.35, 0.05], nargs='+', type=list)
     parser.add_argument('--loss_scale', default=[150, 20, 1], nargs='+', type=list)
     parser.add_argument('--loss', default=['kl', 'l1', 'ce'], nargs='+', type=list)
-    # parser.add_argument('--weight', default=[0.6, 0.4], nargs='+', type=list)
-    # parser.add_argument('--loss_scale', default=[10, 1], nargs='+', type=list)
-    # parser.add_argument('--loss', default=['kl', 'l1'], nargs='+', type=list)
 
-    parser.add_argument('--weight_decay', default=1e-5, type=float)
-    parser.add_argument('--device', default='cuda:1', type=str)
+    
+    
 
     # Add pytorch lightning's args to parser as a group.
     parser = Trainer.add_argparse_args(parser)
