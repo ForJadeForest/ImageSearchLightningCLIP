@@ -70,6 +70,9 @@ class TextDataset(Dataset):
 
     def load(self, overwirite):
         cache_path = self.cache_dir / 'cache-train.pth' if self.train else self.cache_dir / 'cache-val.pth'
+        if not self.cache_dir.exists():
+            self.cache_dir.mkdir()
+            
         if overwirite or not cache_path.exists():
             print('重写/不存在缓存文件，开始处理文件')
             if self.train:
