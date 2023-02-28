@@ -1,5 +1,5 @@
 # CLIP Distill
-
+[中文版](./Readme_cn.md)
 ## 0. Basic Idea
 Considering that it is difficult for consumer-grade GPUs to handle two CLIP models simultaneously, this project separately distills the text and image encoders.
 
