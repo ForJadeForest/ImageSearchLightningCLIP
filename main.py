@@ -53,8 +53,6 @@ def main(args):
 
     trainer = Trainer.from_argparse_args(args,
                                          enable_progress_bar=True,
-                                         auto_select_gpus=True,
-                                         gradient_clip_val=5,
                                          )
 
     trainer.fit(model, data_module)
@@ -81,6 +79,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr', default=0.001, type=float)
     parser.add_argument('--weight_decay', default=1e-5, type=float)
     parser.add_argument('--gpus', default=[0, 1, 2, 3], nargs='+', type=list)
+    parser.add_argument('--gradient_clip_val', default=5, type=float)
 
 
     # LR Scheduler
