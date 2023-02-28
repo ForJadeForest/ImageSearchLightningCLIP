@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-
+from clip import tokenize
 import torch
 from PIL import Image
 from torch.utils.data import Dataset
@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 
 class TextDataset(Dataset):
-    def __init__(self, cache_dir, data_dir=r'data/ref', train=True, overwrite=False,
+    def __init__(self, cache_dir, data_dir, train=True, overwrite=False,
                  img_mean=(0.485, 0.456, 0.406),
                  img_std=(0.229, 0.224, 0.225)):
         super(TextDataset, self).__init__()
@@ -29,7 +29,7 @@ class TextDataset(Dataset):
         if self.train:
             coco2017_file = self.data_dir / 'COCO' / 'annotations' / 'captions_train2017.json'
             cc_file = self.data_dir / 'CC' / 'Train_GCC-training.tsv'
-            print(coco2017_file)
+
             with cc_file.open('r', encoding='utf8') as f:
                 for content in f.readlines():
                     raw_text.append(content.split('\t')[0])
@@ -41,12 +41,7 @@ class TextDataset(Dataset):
             print('All data: {} Begin tokenizing...'.format(len(raw_text)))
             tokenize_text = []
             for text in tqdm(raw_text):
-                try:
-                    tokenize_text.append(self.tokenizer(text).squeeze())
-                except:
-                    continue
-            print('Tokenize Done! with {} texts loads'.format(len(tokenize_text)))
-            print('the rate is {}'.format(len(tokenize_text) / len(raw_text)))
+                tokenize_text.append(self.tokenizer(text, truncate=True).squeeze())
 
             return torch.stack(tokenize_text)
         else:
@@ -75,6 +70,9 @@ class TextDataset(Dataset):
 
     def load(self, overwirite):
         cache_path = self.cache_dir / 'cache-train.pth' if self.train else self.cache_dir / 'cache-val.pth'
+        if not self.cache_dir.exists():
+            self.cache_dir.mkdir()
+            
         if overwirite or not cache_path.exists():
             print('重写/不存在缓存文件，开始处理文件')
             if self.train:
