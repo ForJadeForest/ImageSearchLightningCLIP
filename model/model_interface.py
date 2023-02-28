@@ -52,13 +52,13 @@ class MInterface(pl.LightningModule):
         stu_logits, tea_logits = stu_logits.softmax(dim=-1), tea_logits.softmax(dim=-1)
 
         label = torch.arange(stu_encode.shape[0], device=self.device)
-        k_list = [i for i in [1, 2, 3, 4, 5, 10, 20, 30, 50] if i < self.hparams.batch_size]
+        k_list = [i for i in [1, 2, 3, 4, 5, 10, 20, 30, 50] if i < stu_encode.shape[0]]
         for k in k_list:
             if k == 1:
-                acc = accuracy(stu_logits, label, top_k=1)
+                acc = accuracy(stu_logits, label, top_k=1, task='multiclass', num_classes=stu_encode.shape[0])
                 self.log('val_acc', acc, on_epoch=True, on_step=False, prog_bar=False, sync_dist=True)
             else:
-                acc = accuracy(stu_logits, label, top_k=k)
+                acc = accuracy(stu_logits, label, top_k=k, task='multiclass', num_classes=stu_encode.shape[0])
                 self.log('val_acc/top{}'.format(k), acc, on_epoch=True, on_step=False, prog_bar=False, sync_dist=True)
         return
 

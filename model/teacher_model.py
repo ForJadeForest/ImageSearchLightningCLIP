@@ -3,9 +3,9 @@ from torch import nn
 
 
 class TeacherModel(nn.Module):
-    def __init__(self, teacher_name, device):
+    def __init__(self, teacher_name):
         super().__init__()
-        self.teacher_model, self.preprocess = clip.load(teacher_name, device=device)
+        self.teacher_model, self.preprocess = clip.load(teacher_name)
 
     def encode_image(self, image):
         return self.teacher_model.encode_image(image)

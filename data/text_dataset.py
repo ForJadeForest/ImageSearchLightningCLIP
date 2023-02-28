@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-
+from clip import tokenize
 import torch
 from PIL import Image
 from torch.utils.data import Dataset
@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 
 class TextDataset(Dataset):
-    def __init__(self, cache_dir, data_dir=r'data/ref', train=True, overwrite=False,
+    def __init__(self, cache_dir, data_dir, train=True, overwrite=False,
                  img_mean=(0.485, 0.456, 0.406),
                  img_std=(0.229, 0.224, 0.225)):
         super(TextDataset, self).__init__()
@@ -41,7 +41,7 @@ class TextDataset(Dataset):
             print('All data: {} Begin tokenizing...'.format(len(raw_text)))
             tokenize_text = []
             for text in tqdm(raw_text):
-                tokenize_text.append(self.tokenizer(text).squeeze(), truncate=True)
+                tokenize_text.append(self.tokenizer(text, truncate=True).squeeze())
 
             return torch.stack(tokenize_text)
         else:

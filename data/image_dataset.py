@@ -21,7 +21,7 @@ class ImageDataset(Dataset):
 
     def check_files(self):
         if self.train:
-            train_image_file_list_path = op.join(self.data_dir, 'image')
+            train_image_file_list_path = op.join(self.data_dir, 'images')
             self.path_list = [op.join(train_image_file_list_path, i) for i in os.listdir(train_image_file_list_path)]
         else:
             val_image_file_list_path = op.join(self.data_dir, 'COCO', 'val2017')

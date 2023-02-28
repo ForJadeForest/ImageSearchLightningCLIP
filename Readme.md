@@ -33,3 +33,52 @@
 ```
 
 ## 2. train the distillation model
+1. 多卡 image encoder
+```
+python main.py --data_dir /path/to/data/ --strategy=ddp --gpus=0,1,2,3 --precision=16 --max_epochs=100 --dataset=image_dataset --model_name=model_image_distilled
+```
+2. 多卡 text encoder
+```
+python main.py --data_dir /path/to/data/ --strategy=ddp --gpus=0,1,2,3 --precision=16 --max_epochs=100 --dataset=text_dataset --model_name=model_text_distilled
+```
+
+1. 单卡 image encoder
+```
+python main.py --data_dir /path/to/data/ --gpus=0 --precision=16 --max_epochs=100 --dataset=image_dataset --model_name=model_image_distilled
+```
+2. 单卡 text encoder
+```
+python main.py --data_dir /path/to/data/ --gpus=0 --precision=16 --max_epochs=100 --dataset=text_dataset --model_name=model_text_distilled
+```
+
+更多Pytorch-lightning训练参数可以参考 https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#trainer-class-api
+
+### Loss Setting
+项目设置了3个loss，分别是l1, ce, kl
+
+如果选择了[l1, ce, kl]
+最终loss的计算方式为：
+$$
+loss = weight_1 * scale_1 * l1 + weight_2 * scale_2 * ce  + weight_3 * scale_3 * kl
+$$
+Tips：loss列表中的顺序和weight，scale的顺序是一致的
+
+### Student模型设置
+```
+    # Vit Model Hyperparameters
+    parser.add_argument('--input_resolution', default=224, type=int)
+    parser.add_argument('--patch_size', default=32, type=int)
+    parser.add_argument('--width', default=576, type=int)
+    parser.add_argument('--layers', default=6, type=int)
+    parser.add_argument('--heads', default=24, type=int)
+
+    # Language Transformer Model Hyperparameters
+    parser.add_argument('--context_length', default=77, type=int)
+    parser.add_argument('--vocab_size', default=49408, type=int)
+    parser.add_argument('--transformer_width', default=128, type=int)
+    parser.add_argument('--transformer_layers', default=6, type=int)
+    parser.add_argument('--transformer_heads', default=8, type=int)
+```
+这些参数可以修改Student模型结构
+
+
