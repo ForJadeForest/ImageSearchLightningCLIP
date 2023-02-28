@@ -53,6 +53,7 @@ def main(args):
 
     trainer = Trainer.from_argparse_args(args,
                                          enable_progress_bar=True,
+                                        #  gpus=[0, 1]
                                          )
 
     trainer.fit(model, data_module)
@@ -67,19 +68,13 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=None, type=int)
 
     # Trainer Control
-    parser.add_argument('--precision', default=16, type=int)
-    parser.add_argument('--strategy', default='ddp', type=str)
-    parser.add_argument('--tune', default='false', type=str)
 
     # Basic Training Control
     parser.add_argument('--batch_size', default=512, type=int)
-    parser.add_argument('--max_epochs', default=500, type=int)
     parser.add_argument('--num_workers', default=36, type=int)
     parser.add_argument('--seed', default=2022, type=int)
     parser.add_argument('--lr', default=0.001, type=float)
     parser.add_argument('--weight_decay', default=1e-5, type=float)
-    parser.add_argument('--gpus', default=[0, 1, 2, 3], nargs='+', type=list)
-    parser.add_argument('--gradient_clip_val', default=5, type=float)
 
 
     # LR Scheduler
@@ -129,17 +124,16 @@ if __name__ == '__main__':
     # Distilled Hyperparameters
     parser.add_argument('--t', default=4, type=int)
     parser.add_argument('--weight', default=[0.6, 0.35, 0.05], nargs='+', type=list)
-    parser.add_argument('--loss_scale', default=[150, 20, 1], nargs='+', type=list)
+    parser.add_argument('--loss_scale', default=[1, 1, 1], nargs='+', type=list)
     parser.add_argument('--loss', default=['kl', 'l1', 'ce'], nargs='+', type=list)
 
-    
+    parser.add_argument('--device', default='cuda', type=str)
     
 
     # Add pytorch lightning's args to parser as a group.
     parser = Trainer.add_argparse_args(parser)
 
     # Reset Some Default Trainer Arguments' Default Values
-    parser.set_defaults(max_epochs=500)
     args = parser.parse_args()
 
     # List Arguments
